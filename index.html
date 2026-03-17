@@ -162,20 +162,20 @@
     </div>
 
     <script>
-        // 🛑 สำคัญ: นำ URL จาก Google Apps Script มาวางตรงนี้
-        const SHEETS_URL = "https://script.google.com/macros/s/AKfycbx0e2tBIH_o94DBvDcG0doFLRi8PrwwYhQbvhq8WsBQRi-LODHO41LusCB3ZQUPp_kSEA/exec"; 
+        // 1. 🛑 วาง URL ที่ก๊อปมาใหม่จาก Apps Script ตรงนี้ (ต้อง Deploy ใหม่หลังจากแก้ doPost/doGet นะ)
+        const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxFIkIRJn8VHJymzGtTmTNTyxY9nhuTTAL8yu_sG9V2UtSqFKIQRPwXd8dnAs7dDfOpHw/exec"; 
 
         const allData = [
             { q: "หมิงชอบกินอะไรที่สุด?", opt: ["กะเพราหมูกรอบ", "ชาบูเนื้อ", "ซูชิ", "อาหารเม็ด"], ans: 0 },
             { q: "หมิงอยากเป็น Developer สายไหน?", opt: ["Frontend", "Backend", "Full Stack", "Mobile Dev"], ans: 2 },
             { q: "นิสัยจริงๆ ของหมิงเป็นยังไง?", opt: ["นิ่งๆ ขรึมๆ", "ตลกกวนประสาท", "ขี้อาย", "พูดมาก"], ans: 1 },
-            { q: "หมิงกลัวอะไรมากที่สุด?", opt: ["ผี", "ความจน", "แมลงสาบ", "ไม่มีเน็ต"], ans: 3 },
+            { q: "หมิงกลัวอะไรมากที่สุด?", opt: ["ผี", "ความจน", "แมลงสาบ", "ไม่มีเน็ต"], ans: 1 },
             { q: "หมิงสูงเท่าไหร่?", opt: ["170 cm", "174 cm", "178 cm", "182 cm"], ans: 1 },
             { q: "วันว่างหมิงมักจะทำอะไร?", opt: ["เขียนโค้ด", "นอนเปื่อย", "เล่นเกม", "หาของกิน"], ans: 0 },
-            { q: "สีที่หมิงชอบที่สุดคือ?", opt: ["แดง", "ดำ", "ขาว", "น้ำเงิน"], ans: 0 },
-            { q: "หมิงชอบไปเที่ยวที่ไหน?", opt: ["ทะเล", "ภูเขา", "หั่ง", "ต่างประเทศ"], ans: 1 },
+            { q: "สีที่หมิงชอบที่สุดคือ?", opt: ["แดง", "ดำ", "ขาว", "น้ำเงิน"], ans: 1 },
+            { q: "หมิงชอบไปเที่ยวที่ไหน?", opt: ["ทะเล", "ภูเขา", "ห้าง", "ต่างประเทศ"], ans: 0 },
             { q: "ถ้าหมิงรวย จะซื้ออะไรอย่างแรก?", opt: ["บ้านให้แม่", "รถสปอร์ต", "อัพคอมแรงๆ", "ไปเที่ยวรอบโลก"], ans: 2 },
-            { q: "ฉายาที่เพื่อนเรียกหมิงบ่อยที่สุด?", opt: ["สุดหล่อ", "เทพหมิง", "หมิงซ่า", "เฮียหมิง"], ans: 3 }
+            { q: "ฉายาที่เพื่อนเรียกหมิงบ่อยที่สุด?", opt: ["ไอ้หล่อ", "เทพหมิง", "หมิงซ่า", "ตัวตึง"], ans: 1 }
         ];
 
         let playerName = "";
@@ -232,33 +232,49 @@
             }, 1000);
         }
 
+        // ดึงข้อมูลอันดับจาก Sheets
+        async function fetchLeaderboard() {
+            try {
+                const response = await fetch(SHEETS_URL);
+                const data = await response.json();
+                const list = document.getElementById('rank-list');
+                list.innerHTML = ''; 
+                
+                data.forEach((player, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'rank-item';
+                    item.innerHTML = `<span>${index + 1}. 🌟 ${player.name}</span><span>${player.score} แต้ม</span>`;
+                    list.appendChild(item);
+                });
+            } catch (e) {
+                console.log("กำลังโหลดข้อมูล...");
+            }
+        }
+
         async function finishGame() {
             document.getElementById('game-screen').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('hidden');
             document.getElementById('final-score').innerText = `${score}/${allData.length}`;
             
-            if(lives <= 0) document.getElementById('status-msg').innerText = "เสียใจด้วย หัวใจหมด! 💔";
-
-            // ส่งข้อมูลไป Sheets
             try {
+                // 1. ส่งข้อมูลไปเก็บ
                 await fetch(SHEETS_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     body: JSON.stringify({ name: playerName, score: score })
                 });
-                document.getElementById('saving-msg').innerHTML = "✅ บันทึกคะแนนสำเร็จ!";
+                
+                document.getElementById('saving-msg').innerText = "✅ บันทึกแล้ว! กำลังโหลดอันดับล่าสุด...";
+                
+                // 2. ดึงข้อมูล 10 คนล่าสุดมาโชว์ (หน่วงเวลา 2 วิให้ Google อัปเดต)
+                setTimeout(fetchLeaderboard, 2000);
+                
             } catch (e) {
-                document.getElementById('saving-msg').innerText = "❌ บันทึกคะแนนขัดข้อง";
+                document.getElementById('saving-msg').innerText = "❌ การบันทึกขัดข้อง";
             }
-            
-            showLocalRank(playerName, score);
-        }
-
-        function showLocalRank(name, score) {
-            const list = document.getElementById('rank-list');
-            // เพิ่มชื่อผู้เล่นปัจจุบันเข้าในรายการ (จำลอง)
-            list.innerHTML += `<div class="rank-item"><span>🌟 ${name}</span><span>${score} แต้ม</span></div>`;
         }
     </script>
+</body>
+</html>
 </body>
 </html>
