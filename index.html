@@ -162,110 +162,125 @@
     </div>
 
     <script>
-        // 1. 🛑 วาง URL ที่ก๊อปมาใหม่จาก Apps Script ตรงนี้ (ต้อง Deploy ใหม่หลังจากแก้ doPost/doGet นะ)
-        const SHEETS_URL = "https://script.google.com/macros/s/AKfycbwXJHMHNrvyx2ilXzfqO3Li2_wLZOksyx0Drvnf7ZFhOyj3LctxaHcF--1WMLK_f87BGA/exec"; 
+    const SHEETS_URL = "https://script.google.com/macros/s/AKfycbwXJHMHNrvyx2ilXzfqO3Li2_wLZOksyx0Drvnf7ZFhOyj3LctxaHcF--1WMLK_f87BGA/exec"; 
 
-        const allData = [
-            { q: "หมิงชอบกินอะไรที่สุด?", opt: ["กะเพราหมูกรอบ", "ชาบูเนื้อ", "ซูชิ", "อาหารเม็ด"], ans: 0 },
-            { q: "หมิงอยากเป็น Developer สายไหน?", opt: ["Frontend", "Backend", "Full Stack", "Mobile Dev"], ans: 2 },
-            { q: "นิสัยจริงๆ ของหมิงเป็นยังไง?", opt: ["นิ่งๆ ขรึมๆ", "ตลกกวนประสาท", "ขี้อาย", "พูดมาก"], ans: 1 },
-            { q: "หมิงกลัวอะไรมากที่สุด?", opt: ["ผี", "ความจน", "แมลงสาบ", "ไม่มีเน็ต"], ans: 3 },
-            { q: "หมิงสูงเท่าไหร่?", opt: ["170 cm", "174 cm", "178 cm", "182 cm"], ans: 1 },
-            { q: "วันว่างหมิงมักจะทำอะไร?", opt: ["เขียนโค้ด", "นอนเปื่อย", "เล่นเกม", "หาของกิน"], ans: 0 },
-            { q: "สีที่หมิงชอบที่สุดคือ?", opt: ["แดง", "ดำ", "ขาว", "น้ำเงิน"], ans: 0 },
-            { q: "หมิงชอบไปเที่ยวที่ไหน?", opt: ["ทะเล", "ภูเขา", "ห้าง", "ต่างประเทศ"], ans: 1 },
-            { q: "ถ้าหมิงรวย จะซื้ออะไรอย่างแรก?", opt: ["บ้านให้แม่", "รถสปอร์ต", "อัพคอมแรงๆ", "ไปเที่ยวรอบโลก"], ans: 2 },
-            { q: "ฉายาที่เพื่อนเรียกหมิงบ่อยที่สุด?", opt: ["สุดหล่อ", "เทพหมิง", "หมิงซ่า", "เฮียหมิง"], ans: 3}
-        ];
+    const allData = [
+        { q: "หมิงชอบกินอะไรที่สุด?", opt: ["กะเพราหมูกรอบ", "ชาบูเนื้อ", "ซูชิ", "อาหารเม็ด"], ans: 0 },
+        { q: "หมิงอยากเป็น Developer สายไหน?", opt: ["Frontend", "Backend", "Full Stack", "Mobile Dev"], ans: 2 },
+        { q: "นิสัยจริงๆ ของหมิงเป็นยังไง?", opt: ["นิ่งๆ ขรึมๆ", "ตลกกวนประสาท", "ขี้อาย", "พูดมาก"], ans: 1 },
+        { q: "หมิงกลัวอะไรมากที่สุด?", opt: ["ผี", "ความจน", "แมลงสาบ", "ไม่มีเน็ต"], ans: 3 },
+        { q: "หมิงสูงเท่าไหร่?", opt: ["170 cm", "174 cm", "178 cm", "182 cm"], ans: 1 },
+        { q: "วันว่างหมิงมักจะทำอะไร?", opt: ["เขียนโค้ด", "นอนเปื่อย", "เล่นเกม", "หาของกิน"], ans: 0 },
+        { q: "สีที่หมิงชอบที่สุดคือ?", opt: ["แดง", "ดำ", "ขาว", "น้ำเงิน"], ans: 0 },
+        { q: "หมิงชอบไปเที่ยวที่ไหน?", opt: ["ทะเล", "ภูเขา", "ห้าง", "ต่างประเทศ"], ans: 1 },
+        { q: "ถ้าหมิงรวย จะซื้ออะไรอย่างแรก?", opt: ["บ้านให้แม่", "รถสปอร์ต", "อัพคอมแรงๆ", "ไปเที่ยวรอบโลก"], ans: 2 },
+        { q: "ฉายาที่เพื่อนเรียกหมิงบ่อยที่สุด?", opt: ["สุดหล่อ", "เทพหมิง", "หมิงซ่า", "เฮียหมิง"], ans: 3}
+    ];
 
-        let playerName = "";
-        let currentIndex = 0;
-        let score = 0;
-        let lives = 3;
+    let playerName = "";
+    let currentIndex = 0;
+    let score = 0;
+    let lives = 3;
 
-        function startGame() {
-            playerName = document.getElementById('player-name').value.trim();
-            if(!playerName) return alert("กรุณาใส่ชื่อก่อนเริ่มเล่นครับ!");
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            renderQuestion();
-        }
-
-        function renderQuestion() {
-            const q = allData[currentIndex];
-            document.getElementById('q-text').innerText = q.q;
-            document.getElementById('q-count').innerText = `${currentIndex + 1}/${allData.length}`;
-            const container = document.getElementById('opt-container');
-            container.innerHTML = '';
-            
-            q.opt.forEach((text, i) => {
-                const div = document.createElement('div');
-                div.className = 'option';
-                div.innerText = text;
-                div.onclick = () => checkAnswer(i, div);
-                container.appendChild(div);
-            });
-        }
-
-        function checkAnswer(selected, el) {
-            const correct = allData[currentIndex].ans;
-            const options = document.querySelectorAll('.option');
-            options.forEach(o => o.style.pointerEvents = 'none');
-
-            if(selected === correct) {
-                el.classList.add('correct');
-                score++;
-            } else {
-                el.classList.add('wrong');
-                options[correct].classList.add('correct');
-                lives--;
-            }
-
-            setTimeout(() => {
-                currentIndex++;
-                if(lives > 0 && currentIndex < allData.length) {
-                    document.getElementById('hp-display').innerText = '❤️'.repeat(lives);
-                    renderQuestion();
-                } else {
-                    finishGame();
-                }
-            }, 1000);
-        }
-
-        // ... โค้ดส่วนอื่น ๆ ...
-
-// ดึงข้อมูลอันดับจาก Sheets มาแสดง (อันใหม่ที่ให้ไปทับอันนี้เลย)
-async function fetchLeaderboard() {
-    try {
-        const response = await fetch(SHEETS_URL);
-        const data = await response.json();
-        const list = document.getElementById('rank-list');
-        list.innerHTML = ''; 
-        
-        data.forEach((player, index) => {
-            let medal = "";
-            if(index === 0) medal = "🥇 ";
-            else if(index === 1) medal = "🥈 ";
-            else if(index === 2) medal = "🥉 ";
-            else medal = `${index + 1}. `;
-
-            const item = document.createElement('div');
-            item.className = 'rank-item';
-            if(index === 0) item.style.color = "#fbbf24"; 
-            item.innerHTML = `<span>${medal}${player.name}</span><span>${player.score} แต้ม</span>`;
-            list.appendChild(item);
-        });
-    } catch (e) {
-        console.log("กำลังโหลดข้อมูลอันดับ...");
+    function startGame() {
+        playerName = document.getElementById('player-name').value.trim();
+        if(!playerName) return alert("กรุณาใส่ชื่อก่อนเริ่มเล่นครับ!");
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        renderQuestion();
     }
-}
 
-// ฟังก์ชัน finishGame (ที่มีการเรียกใช้ fetchLeaderboard อยู่ข้างใน)
-async function finishGame() {
-    // ... โค้ดบันทึกคะแนน ...
-    setTimeout(fetchLeaderboard, 2000); // มันจะมาเรียกฟังก์ชันข้างบนนี้เอง
-}
-    </script>
+    function renderQuestion() {
+        const q = allData[currentIndex];
+        document.getElementById('q-text').innerText = q.q;
+        document.getElementById('q-count').innerText = `${currentIndex + 1}/${allData.length}`;
+        const container = document.getElementById('opt-container');
+        container.innerHTML = '';
+        
+        q.opt.forEach((text, i) => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.innerText = text;
+            div.onclick = () => checkAnswer(i, div);
+            container.appendChild(div);
+        });
+    }
+
+    function checkAnswer(selected, el) {
+        const correct = allData[currentIndex].ans;
+        const options = document.querySelectorAll('.option');
+        options.forEach(o => o.style.pointerEvents = 'none');
+
+        if(selected === correct) {
+            el.classList.add('correct');
+            score++;
+        } else {
+            el.classList.add('wrong');
+            options[correct].classList.add('correct');
+            lives--;
+            // อัปเดตเลือดทันทีที่ตอบผิด
+            document.getElementById('hp-display').innerText = lives > 0 ? '❤️'.repeat(lives) : '💔';
+        }
+
+        setTimeout(() => {
+            currentIndex++;
+            if(lives > 0 && currentIndex < allData.length) {
+                renderQuestion();
+            } else {
+                finishGame();
+            }
+        }, 1000);
+    }
+
+    async function finishGame() {
+        // --- 1. สลับหน้าจอมาที่หน้าผลลัพธ์ ---
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        document.getElementById('final-score').innerText = `${score}/${allData.length}`;
+
+        if(lives <= 0) document.getElementById('status-msg').innerText = "เสียใจด้วย หัวใจหมดซะก่อน! 💔";
+
+        // --- 2. ส่งข้อมูลไป Google Sheets ---
+        try {
+            await fetch(SHEETS_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ name: playerName, score: score })
+            });
+            document.getElementById('saving-msg').innerText = "✅ บันทึกแล้ว! กำลังโหลดอันดับ...";
+        } catch (e) {
+            document.getElementById('saving-msg').innerText = "❌ บันทึกขัดข้อง แต่ยังดูอันดับได้";
+        }
+
+        // --- 3. ดึงอันดับมาโชว์ ---
+        setTimeout(fetchLeaderboard, 2000);
+    }
+
+    async function fetchLeaderboard() {
+        try {
+            const response = await fetch(SHEETS_URL);
+            const data = await response.json();
+            const list = document.getElementById('rank-list');
+            list.innerHTML = ''; 
+            
+            data.forEach((player, index) => {
+                let medal = "";
+                if(index === 0) medal = "🥇 ";
+                else if(index === 1) medal = "🥈 ";
+                else if(index === 2) medal = "🥉 ";
+                else medal = `${index + 1}. `;
+
+                const item = document.createElement('div');
+                item.className = 'rank-item';
+                if(index === 0) item.style.color = "#fbbf24"; 
+                item.innerHTML = `<span>${medal}${player.name}</span><span>${player.score} แต้ม</span>`;
+                list.appendChild(item);
+            });
+        } catch (e) {
+            console.log("กำลังโหลดข้อมูลอันดับ...");
+        }
+    }
+</script>
 </body>
 </html>
 </body>
