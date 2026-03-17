@@ -163,7 +163,7 @@
 
     <script>
         // 1. 🛑 วาง URL ที่ก๊อปมาใหม่จาก Apps Script ตรงนี้ (ต้อง Deploy ใหม่หลังจากแก้ doPost/doGet นะ)
-        const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxFIkIRJn8VHJymzGtTmTNTyxY9nhuTTAL8yu_sG9V2UtSqFKIQRPwXd8dnAs7dDfOpHw/exec"; 
+        const SHEETS_URL = "https://script.google.com/macros/s/AKfycbwXJHMHNrvyx2ilXzfqO3Li2_wLZOksyx0Drvnf7ZFhOyj3LctxaHcF--1WMLK_f87BGA/exec"; 
 
         const allData = [
             { q: "หมิงชอบกินอะไรที่สุด?", opt: ["กะเพราหมูกรอบ", "ชาบูเนื้อ", "ซูชิ", "อาหารเม็ด"], ans: 0 },
@@ -173,9 +173,9 @@
             { q: "หมิงสูงเท่าไหร่?", opt: ["170 cm", "174 cm", "178 cm", "182 cm"], ans: 1 },
             { q: "วันว่างหมิงมักจะทำอะไร?", opt: ["เขียนโค้ด", "นอนเปื่อย", "เล่นเกม", "หาของกิน"], ans: 0 },
             { q: "สีที่หมิงชอบที่สุดคือ?", opt: ["แดง", "ดำ", "ขาว", "น้ำเงิน"], ans: 0 },
-            { q: "หมิงชอบไปเที่ยวที่ไหน?", opt: ["ทะเล", "ภูเขา", "ห้าง", "ต่างประเทศ"], ans: 0 },
+            { q: "หมิงชอบไปเที่ยวที่ไหน?", opt: ["ทะเล", "ภูเขา", "ห้าง", "ต่างประเทศ"], ans: 1 },
             { q: "ถ้าหมิงรวย จะซื้ออะไรอย่างแรก?", opt: ["บ้านให้แม่", "รถสปอร์ต", "อัพคอมแรงๆ", "ไปเที่ยวรอบโลก"], ans: 2 },
-            { q: "ฉายาที่เพื่อนเรียกหมิงบ่อยที่สุด?", opt: ["ไอ้หล่อ", "เทพหมิง", "หมิงซ่า", "ตัวตึง"], ans: 1 }
+            { q: "ฉายาที่เพื่อนเรียกหมิงบ่อยที่สุด?", opt: ["สุดหล่อ", "เทพหมิง", "หมิงซ่า", "เฮียหมิง"], ans: 3}
         ];
 
         let playerName = "";
@@ -232,47 +232,39 @@
             }, 1000);
         }
 
-        // ดึงข้อมูลอันดับจาก Sheets
-        async function fetchLeaderboard() {
-            try {
-                const response = await fetch(SHEETS_URL);
-                const data = await response.json();
-                const list = document.getElementById('rank-list');
-                list.innerHTML = ''; 
-                
-                data.forEach((player, index) => {
-                    const item = document.createElement('div');
-                    item.className = 'rank-item';
-                    item.innerHTML = `<span>${index + 1}. 🌟 ${player.name}</span><span>${player.score} แต้ม</span>`;
-                    list.appendChild(item);
-                });
-            } catch (e) {
-                console.log("กำลังโหลดข้อมูล...");
-            }
-        }
+        // ... โค้ดส่วนอื่น ๆ ...
 
-        async function finishGame() {
-            document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('result-screen').classList.remove('hidden');
-            document.getElementById('final-score').innerText = `${score}/${allData.length}`;
-            
-            try {
-                // 1. ส่งข้อมูลไปเก็บ
-                await fetch(SHEETS_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({ name: playerName, score: score })
-                });
-                
-                document.getElementById('saving-msg').innerText = "✅ บันทึกแล้ว! กำลังโหลดอันดับล่าสุด...";
-                
-                // 2. ดึงข้อมูล 10 คนล่าสุดมาโชว์ (หน่วงเวลา 2 วิให้ Google อัปเดต)
-                setTimeout(fetchLeaderboard, 2000);
-                
-            } catch (e) {
-                document.getElementById('saving-msg').innerText = "❌ การบันทึกขัดข้อง";
-            }
-        }
+// ดึงข้อมูลอันดับจาก Sheets มาแสดง (อันใหม่ที่ให้ไปทับอันนี้เลย)
+async function fetchLeaderboard() {
+    try {
+        const response = await fetch(SHEETS_URL);
+        const data = await response.json();
+        const list = document.getElementById('rank-list');
+        list.innerHTML = ''; 
+        
+        data.forEach((player, index) => {
+            let medal = "";
+            if(index === 0) medal = "🥇 ";
+            else if(index === 1) medal = "🥈 ";
+            else if(index === 2) medal = "🥉 ";
+            else medal = `${index + 1}. `;
+
+            const item = document.createElement('div');
+            item.className = 'rank-item';
+            if(index === 0) item.style.color = "#fbbf24"; 
+            item.innerHTML = `<span>${medal}${player.name}</span><span>${player.score} แต้ม</span>`;
+            list.appendChild(item);
+        });
+    } catch (e) {
+        console.log("กำลังโหลดข้อมูลอันดับ...");
+    }
+}
+
+// ฟังก์ชัน finishGame (ที่มีการเรียกใช้ fetchLeaderboard อยู่ข้างใน)
+async function finishGame() {
+    // ... โค้ดบันทึกคะแนน ...
+    setTimeout(fetchLeaderboard, 2000); // มันจะมาเรียกฟังก์ชันข้างบนนี้เอง
+}
     </script>
 </body>
 </html>
